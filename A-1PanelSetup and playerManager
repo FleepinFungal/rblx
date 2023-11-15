@@ -42,20 +42,27 @@ end
 for _, v in pairs (players:GetChildren()) do
 	print("Searching...")
 	if table.find(exceptions, v.Team.Name) then
-		return
+		local gui = storage["Alpha Gui"]:Clone()
+		gui.Name = v.Name
+		gui.Parent = list
+		gui:Destroy()
 	else
 		local gui = storage["Alpha Gui"]:Clone()
 		gui.Name = v.Name
 		gui.Parent = list
 		gui.LayoutOrder = getLayoutOrder(players:FindFirstChild(v.Name))
-		fillinfo(gui, v.Name, v)
 		table.insert(names, v.Name)
+		fillinfo(gui, v.Name, v)
 	end
 end
 
 -- new vip added
 players.PlayerAdded:Connect(function(player: Player) 
 	if table.find(exceptions, player.Team.Name) then
+		local gui = storage["Alpha Gui"]:Clone()
+		gui.Name = player.Name
+		gui.Parent = list
+		gui:Destroy()
 		return
 	else
 		local gui = storage["Alpha Gui"]:Clone()
@@ -68,8 +75,10 @@ players.PlayerAdded:Connect(function(player: Player)
 end)
 -- vip left :(
 players.PlayerRemoving:Connect(function(player: Player) 
-	if list:FindFirstChild(player.Name) then
+	if list:WaitForChild("Archived"):FindFirstChild(player.Name) then
 		list:WaitForChild("Archived"):FindFirstChild(player.Name):Destroy()
+	end
+	if list:FindFirstChild(player.Name) then
 		for _, i in pairs(names) do
 			if i == player.Name then
 				table.remove(names, table.find(names, i))
@@ -108,6 +117,8 @@ storage["TeamSwitchA-1"].Event:Connect(function(name)
 		end
 	end
 end)
+
+
 
 PlayerScript:
 -- services

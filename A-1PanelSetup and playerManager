@@ -1,0 +1,148 @@
+--services
+local players = game:GetService("Players")
+local storage = game:GetService("ReplicatedStorage")
+
+--variables
+local lp = players.LocalPlayer
+local list = script.Parent
+
+--arrays for team exceptions and names who are online
+local name = nil
+local names = {}
+local exceptions = {"???"}
+
+
+-- fill user information out
+local function fillinfo (gui, playerName, player)
+	name = playerName
+	local playerColor = players:FindFirstChild(playerName).Team.TeamColor.Color
+	local playerDetails = gui.PlayerDetails
+	local id = players:FindFirstChild(playerName).UserId
+	local textColorR = playerColor.R + .2
+	local textColorG = playerColor.G + .2
+	local textColorB = playerColor.B + .2
+	
+	playerDetails.PlayerIcon.Image = players:GetUserThumbnailAsync(id, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+	playerDetails.PlayerNAME.Text = players:GetPlayerByUserId(id).Name
+	playerDetails.PlayerRank.Text = player:GetRoleInGroup(6650179)
+	playerDetails.PlayerRank.TextColor3 = Color3.new(textColorR, textColorG, textColorB)--players:FindFirstChild(playerName).Team.TeamColor.Color
+	gui.BackgroundColor3 = playerColor
+end
+
+--setting up layout order per rank (not set up)
+local function getLayoutOrder (player)
+	if player:GetRankInGroup(6650179) == 255 then
+		return(0)
+	else 
+		return(10)
+	end
+end
+
+-- fill existing personnel
+for _, v in pairs (players:GetChildren()) do
+	print("Searching...")
+	if table.find(exceptions, v.Team.Name) then
+		return
+	else
+		local gui = storage["Alpha Gui"]:Clone()
+		gui.Name = v.Name
+		gui.Parent = list
+		gui.LayoutOrder = getLayoutOrder(players:FindFirstChild(v.Name))
+		fillinfo(gui, v.Name, v)
+		table.insert(names, v.Name)
+	end
+end
+
+-- new vip added
+players.PlayerAdded:Connect(function(player: Player) 
+	if table.find(exceptions, player.Team.Name) then
+		return
+	else
+		local gui = storage["Alpha Gui"]:Clone()
+		gui.Name = player.Name
+		gui.Parent = list
+		gui.LayoutOrder = getLayoutOrder(player)
+		table.insert(names, player.Name)
+		fillinfo(gui, player.Name, player)
+	end
+end)
+-- vip left :(
+players.PlayerRemoving:Connect(function(player: Player) 
+	if list:FindFirstChild(player.Name) then
+		list:WaitForChild("Archived"):FindFirstChild(player.Name):Destroy()
+		for _, i in pairs(names) do
+			if i == player.Name then
+				table.remove(names, table.find(names, i))
+			end
+		end
+		list:FindFirstChild(player.Name):Destroy()
+	end
+end)
+
+-- retrieve teamswitch information from user
+storage["TeamSwitchA-1"].Event:Connect(function(name)
+	if table.find(exceptions, players:FindFirstChild(name).Team.Name) then
+		for _, i in pairs(names) do
+			if i == name then
+				table.remove(names, table.find(names, i))
+			end
+		end
+		list:FindFirstChild(name):Destroy()
+	else
+		local found = false
+		for _, i in pairs(names) do
+			if i == name then
+				found = true
+			end
+		end
+		if not found then
+			local gui = storage["Alpha Gui"]:Clone()
+			gui.Name = name
+			gui.Parent = list
+			gui.LayoutOrder = getLayoutOrder(players:FindFirstChild(name))
+			fillinfo(gui, name, players:FindFirstChild(name))
+			table.insert(names, name)
+		else
+			local gui = list:FindFirstChild(name)
+			fillinfo(gui, name, players:FindFirstChild(name))
+		end
+	end
+end)
+
+PlayerScript:
+-- services
+local players = game:GetService("Players")
+local storage = game:GetService("ReplicatedStorage")
+
+--variables
+local lp = players.LocalPlayer
+local details = script.Parent.Parent
+
+script.Name = script.Parent.Name -- set script name to user's name
+local name = script.Name -- used to find if the user switches teams
+
+local function fillinfo (gui, playerName, player)
+	name = playerName
+	local playerColor = players:FindFirstChild(playerName).Team.TeamColor.Color
+	local playerDetails = gui.PlayerDetails
+	local id = players:FindFirstChild(playerName).UserId
+	local textColorR = playerColor.R + .2
+	local textColorG = playerColor.G + .2
+	local textColorB = playerColor.B + .2
+
+	playerDetails.PlayerIcon.Image = players:GetUserThumbnailAsync(id, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+	playerDetails.PlayerNAME.Text = players:GetPlayerByUserId(id).Name
+	playerDetails.PlayerRank.Text = player:GetRoleInGroup(6650179)
+	playerDetails.PlayerRank.TextColor3 = Color3.new(textColorR, textColorG, textColorB)--players:FindFirstChild(playerName).Team.TeamColor.Color
+	gui.BackgroundColor3 = playerColor
+end
+
+--check if the script exists, if it does then delete
+if script.Parent.Parent:FindFirstChild("Archived"):FindFirstChild(name) then
+	script:Destroy()
+end
+script.Parent = script.Parent.Parent:FindFirstChild("Archived") -- the script gets sent to archived to make sure it doesnt get deleted without intent
+
+players:FindFirstChild(name):GetPropertyChangedSignal("Team"):Connect(function()
+	storage["TeamSwitchA-1"]:Fire(name)
+end)

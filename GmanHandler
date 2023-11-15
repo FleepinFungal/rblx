@@ -107,7 +107,55 @@ function timestop (player, playerpos)
 	table.clear(timefrozen)
 end
 
+function smite (playerrot, playerbeam)
+	local holylight = storage.GMAN.SmitePlayer:Clone()
+	holylight.Parent = game.Workspace
+	holylight.Name = "Holy Light"
+	holylight.Portal.CFrame = playerrot
+	holylight.Portal.Open:Play()
+	holylight.Portal.Loop:Play()
+	for i = 1, 10, 1 do
+		holylight.Portal.Size = Vector3.new(1,i,i)
+		wait(.1)
+	end
+	wait(1)
+	holylight.Portal.Choir:Play()
+	holylight.Beam.CFrame = playerbeam
+	holylight.InnerBeam.CFrame = playerbeam
+
+	for i = 0, 3, 1 do
+		holylight.Beam.Size = Vector3.new(48,15-i,15-i)
+		holylight.InnerBeam.Size = Vector3.new(48,13-i,13-i)
+		wait(.001)
+	end
+	
+	
+	for i = .3, 1, .1 do
+		holylight.Beam.Transparency = i
+		holylight.InnerBeam.Transparency = i
+		wait(.05)
+	end
+	holylight.Beam:Destroy()
+	holylight.InnerBeam:Destroy()
+
+	for i, v in pairs (workspace:FindFirstChild("Holy Light"):FindFirstChild("Parts"):GetChildren()) do
+		for i = 0, 1, .25 do
+			v.CFrame = v.CFrame:lerp(playerrot, i)
+			wait(.025)
+		end
+		v:Destroy()
+	end
+	holylight.Portal.Loop:Stop()
+	holylight.Portal.slrup:Play()
+	holylight.Portal.Close:Play()
+	holylight.Portal.ParticleEmitter1.Enabled = false
+	holylight.Portal.ParticleEmitter2.Enabled = false
+	task.wait(5)
+	holylight:Destroy()
+end
+
 function teleportal (playerPos, player, location)
+	local playersTouched = {}
 	local uptime = tick()
 	local doorway = storage.GMAN.Doorway:Clone()
 	local exitdoor = storage.GMAN.Doorway:Clone()
@@ -130,8 +178,10 @@ function teleportal (playerPos, player, location)
 	exitDoor.Open:Play()
 	wait(.25)
 	door.Touched:Connect(function(hit)
-		if hit.Parent:IsA("Model") and hit.Parent:FindFirstChild("HumanoidRootPart") then
-			workspace:FindFirstChild(hit.Parent.Name):FindFirstChild("HumanoidRootPart").CFrame = CFrame.new(locationCords[location]) * CFrame.new(0,0,1) * CFrame.Angles(0,math.rad(180), 0)
+		if hit.Parent:IsA("Model") and hit.Parent:FindFirstChild("HumanoidRootPart") and hit.Parent.Name ~= playersTouched[table.find(playersTouched, hit.Parent.Name)] then
+			table.insert(playersTouched, hit.Parent.Name)
+			workspace:FindFirstChild(hit.Parent.Name):FindFirstChild("HumanoidRootPart").CFrame = CFrame.new(locationCords[location]) * CFrame.new(0,0,2) * CFrame.Angles(0,math.rad(180), 0)
+			
 		end
 	end)
 	for i = 0, 255, 5 do
@@ -174,6 +224,48 @@ function hire (player, mouseTarget)
 	end
 	
 end
+
+function take (playerPos, player, mouseTarget)
+	local target
+	for _, v in pairs (players:GetChildren()) do
+		if mouseTarget.Parent.Name == v.Name  and mouseTarget.Parent.Name ~= player.Name and mouseTarget.Parent.Name ~= "HumanoidRootPart" then
+			target = workspace:FindFirstChild(v.Name)
+			print(target)
+
+		end
+	end
+	if target ~= nil then
+		local doorway = storage.GMAN.Doorway:Clone()
+		doorway.Parent = workspace
+		doorway.Door.CFrame = playerPos * CFrame.new(0,-4,0)
+		local door = doorway:FindFirstChild("Door")
+		local tween = tweenService:Create(door, info, {Color = Color3.fromRGB(255,255,255), Position = door.Position + Vector3.new(0,4,0), Size = Vector3.new(.15, 8, 6)})
+		tween:Play()
+		door.Open:Play()
+		wait(1)
+		
+		local partsFolder = Instance.new("Folder")
+		partsFolder.Parent = workspace:FindFirstChild(target.Name)
+		local duplicate
+		if players:FindFirstChild(target.Name) then
+			--duplicate = workspace:FindFirstChild(target.Name):FindFirstChild(mouseTarget.Name)
+			for _, i in pairs (target:GetChildren()) do
+				if i:IsA("Tool") and i.Name == mouseTarget.Name then
+					duplicate = i
+					duplicate = i:Clone()
+					i:Destroy()
+					duplicate:ClearAllChildren()
+					duplicate.Parent = partsFolder
+					duplicate.CFrame = CFrame.new(i.CFrame.Position)
+					duplicate.Anchored = true
+					duplicate.CanCollide = false
+				end
+			end
+		else if workspace:FindFirstChild(target.Name):IsA("Tool") then
+				target:Destroy()
+			end
+		end
+		
 		
 		local tween = tweenService:Create(duplicate, info, {Position = door.Position + Vector3.new(0,2,0), Transparency = 1, Rotation = Vector3.new(math.random(0,360),math.random(0,360),math.random(0,360))})
 		tween:Play()
@@ -212,4 +304,5 @@ storage.GMAN.FireAbility.OnServerEvent:Connect(function(player, ability, target)
 		local playerPos = workspace:FindFirstChild(player.Name):FindFirstChild("HumanoidRootPart").CFrame * CFrame.new(0,0,-5) * CFrame.Angles(0,math.rad(90), 0)
 		take(playerPos, player, target)
 	end
+
 end)

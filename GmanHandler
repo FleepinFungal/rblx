@@ -1,0 +1,215 @@
+-- services
+local storage = game:GetService("ReplicatedStorage")
+local players = game:GetService("Players")
+local chat = game:GetService("Chat")
+local run = game:GetService("RunService")
+
+--tween information
+local tweenService = game:GetService("TweenService")
+local info = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
+
+--teleportation areas
+local locationCords = {
+	CDCZ = Vector3.new(40, 0.5, -120),
+	Sector1 = Vector3.new(-72, 0.5, -125),
+	Sector2 = Vector3.new(-55.863, 25.636, 17.117),
+	Sector3 = Vector3.new(0,100000,0)
+}
+
+local timefrozen = {}
+
+function searchWorkspace (name)
+	local construct = ""
+	for v, i in pairs(workspace:GetChildren()) do
+		if string.lower(i.Name) == name then
+			return(i.Name)
+		else 
+			print("No thing found")
+		end
+	end
+end
+
+function searchPlayers (name)
+	for v, i in pairs(players:GetChildren()) do
+		if string.lower(i.Name) == name then
+			return(i.Name)
+		else 
+			print("No player found")
+	
+		end
+	end
+end
+
+function searchTeams (team)
+	for v, i in pairs(game.Teams:GetChildren()) do
+		if string.lower(i.Name) == team then
+			return(i.Name)
+		else 
+			print("No team found")
+		end
+	end
+end
+
+function typewrite(TextLabel,ShadowText, baseText, text)
+	for i = #baseText, 0, -1 do
+		TextLabel.Text = string.sub(baseText,1,i)
+		ShadowText.Text = string.sub(baseText,1,i)
+		wait(Random.new(0.025, .25))
+	end
+	for i = 1,#text do
+		TextLabel.Text = string.sub(text,1,i)
+		ShadowText.Text = string.sub(text,1,i)
+		wait(Random.new(0.1, .5))
+	end
+end
+
+function timestop (player, playerpos)
+	local hitbox = storage.GMAN.TimestopHitbox:Clone()
+	local Particle = storage.GMAN.FrozenGUI:Clone()
+	local expand = tweenService:Create(hitbox, info, {Transparency = 1, Size = Vector3.new(100, 100, 100)})
+	local guiscale = tweenService:Create(Particle, info, --[[Transparency = 1,]] {Size = UDim2.fromScale(6, 6)})
+	local transparency = tweenService:Create(Particle.ImageLabel, info, {ImageTransparency = 1})
+	
+	expand:Play()
+	hitbox.Parent = workspace
+	hitbox.CFrame = playerpos
+	Particle.Parent = workspace:FindFirstChild(player.Name):FindFirstChild("UpperTorso")
+	guiscale:Play()
+	transparency:Play()
+	hitbox.Touched:Connect(function(hit)
+		if hit.Parent:IsA("Model") and players:FindFirstChild(hit.Parent.Name) ~= player and players:FindFirstChild(hit.Parent.Name) and not workspace:FindFirstChild(hit.Parent.Name):FindFirstChild("Hired") then
+			if table.find(timefrozen, workspace:FindFirstChild(hit.Parent.Name)) then
+			return
+		else
+				table.insert(timefrozen, workspace:FindFirstChild(hit.Parent.Name))
+				storage.GMAN.Freeze:Clone().Parent = workspace:FindFirstChild(hit.Parent.Name)
+				for _, v in pairs (hit.Parent:GetChildren()) do
+					if v.Name==("HumanoidRootPart") or v:IsA("MeshPart") then
+					v.Anchored = true
+					end
+				end
+			end
+		end
+	end)
+	wait(1)
+	hitbox:Destroy()
+	workspace:FindFirstChild(player.Name):FindFirstChild("Head"):FindFirstChild("TimeMrFreeman"):Play()
+	wait(3)
+	workspace:FindFirstChild(player.Name):FindFirstChild("Head"):FindFirstChild("IsItThatTime"):Play()
+	wait(7)
+	for _, v in ipairs (timefrozen) do
+		for _, i in pairs (workspace:WaitForChild(v.Name):GetChildren()) do
+			if i:IsA("MeshPart") or i.Name==("HumanoidRootPart") then
+				i.Anchored = false
+			end
+		end
+	end
+	table.clear(timefrozen)
+end
+
+function teleportal (playerPos, player, location)
+	local uptime = tick()
+	local doorway = storage.GMAN.Doorway:Clone()
+	local exitdoor = storage.GMAN.Doorway:Clone()
+	local door = doorway:FindFirstChild("Door")
+	local exitDoor = exitdoor:FindFirstChild("Door")
+	
+	doorway.Parent = workspace
+	exitdoor.Parent = workspace
+	exitdoor.Door.CFrame = CFrame.new(locationCords[location]) * CFrame.new(0, -1, 0) * CFrame.Angles(0,math.rad(90), 0)
+	doorway.Door.CFrame = playerPos * CFrame.new(0,-4,0)
+	
+	local tween = tweenService:Create(door, info, {Position = door.Position + Vector3.new(0,4,0), Size = Vector3.new(.15, 8, 6)})
+	local otherside = tweenService:Create(exitDoor, info, {Position = exitDoor.Position + Vector3.new(0,4,0), Size = Vector3.new(.15, 8, 6)})
+	local closing = tweenService:Create(door, info, {Position = door.Position + Vector3.new(0,-6,0), Size = Vector3.new(.15, -8, 6)})
+	local closingother = tweenService:Create(exitDoor, info, {Position = exitDoor.Position + Vector3.new(0,-6,0), Size = Vector3.new(.15, -8, 6)})
+	
+	tween:Play()
+	otherside:Play()
+	door.Open:Play()
+	exitDoor.Open:Play()
+	wait(.25)
+	door.Touched:Connect(function(hit)
+		if hit.Parent:IsA("Model") and hit.Parent:FindFirstChild("HumanoidRootPart") then
+			workspace:FindFirstChild(hit.Parent.Name):FindFirstChild("HumanoidRootPart").CFrame = CFrame.new(locationCords[location]) * CFrame.new(0,0,1) * CFrame.Angles(0,math.rad(180), 0)
+		end
+	end)
+	for i = 0, 255, 5 do
+		exitDoor.Color = Color3.fromRGB(i,i,i)
+		door.Color = Color3.fromRGB(i,i,i)
+		wait(.025)
+	end
+	wait(2)
+	closingother:Play()
+	closing:Play()
+	door.Close:Play()
+	exitDoor.Close:Play()
+	wait(1)
+	if tween.Completed then
+		doorway:Destroy()
+		exitdoor:Destroy()
+	end
+	
+end
+
+function hire (player, mouseTarget)
+	local target
+	for _, v in pairs (players:GetChildren()) do
+		if mouseTarget.Name == v.Name then
+			target = workspace:FindFirstChild(v.Name)
+			
+		end
+	end
+	if target ~= nil and not workspace:FindFirstChild(target.Name):FindFirstChild("Hired") then
+		local NameTag = workspace:FindFirstChild(target.Name):FindFirstChild("Head"):WaitForChild("NameTag"):WaitForChild("TextLabelName")
+		local NameTagShadow = workspace:FindFirstChild(target.Name):FindFirstChild("Head"):WaitForChild("NameTag"):WaitForChild("TextLabelNameBack")
+		local text = NameTag.Text
+		local loadout = storage.GMAN.MP5K:Clone()
+		
+		typewrite(NameTag, NameTagShadow, text, "HIRED: "..text)
+		NameTag.TextColor3 = Color3.fromRGB(100,0,0)
+		storage.GMAN.Hired:Clone().Parent = workspace:FindFirstChild(target.Name)
+		
+		loadout.Parent = players:FindFirstChild(target.Name).Backpack 
+	end
+	
+end
+		
+		local tween = tweenService:Create(duplicate, info, {Position = door.Position + Vector3.new(0,2,0), Transparency = 1, Rotation = Vector3.new(math.random(0,360),math.random(0,360),math.random(0,360))})
+		tween:Play()
+		wait(1)
+		door.Close:Play()
+		partsFolder:Destroy()
+		local close = tweenService:Create(door, info, {Position = door.Position + Vector3.new(0,-6,0), Size = Vector3.new(.15, -8, 6)})
+		close:Play()
+		wait(1)
+		if close.Completed then
+			doorway:Destroy()
+		end
+	end
+
+end
+
+local getLocation = ""
+
+storage.GMAN.GetLocation.OnServerEvent:Connect(function(player, location)
+	getLocation = location
+end)
+
+storage.GMAN.FireAbility.OnServerEvent:Connect(function(player, ability, target)
+	if ability == "fired1" then
+		local playerPos = workspace:FindFirstChild(player.Name):FindFirstChild("HumanoidRootPart").CFrame
+		timestop(player, playerPos)
+	end
+	if ability == "fired2" then
+		local playerPos = workspace:FindFirstChild(player.Name):FindFirstChild("HumanoidRootPart").CFrame * CFrame.new(0,0,-5) * CFrame.Angles(0,math.rad(90), 0)
+		teleportal(playerPos, player, getLocation)
+	end
+	if ability == "fired3" then
+		hire(player, target)
+	end
+	if ability == "fired4" then
+		local playerPos = workspace:FindFirstChild(player.Name):FindFirstChild("HumanoidRootPart").CFrame * CFrame.new(0,0,-5) * CFrame.Angles(0,math.rad(90), 0)
+		take(playerPos, player, target)
+	end
+end)

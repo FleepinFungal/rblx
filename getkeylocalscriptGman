@@ -1,0 +1,103 @@
+local u = game:GetService("UserInputService")
+local storage = game.ReplicatedStorage
+local players = game:GetService("Players")
+local chat = game:GetService("Chat")
+
+local locations = {
+	"CDCZ",
+	"Sector1",
+	"Sector2",
+	"Sector3"
+}
+
+
+
+local index = 1
+
+players.LocalPlayer.PlayerGui:FindFirstChild("TeleportGUI"):FindFirstChild("Location").Text = locations[index]
+
+local lastTick = tick()
+local COOLDOWN_DUR = 10
+local COOLDOWN = false
+
+local lastTick2 = tick()
+local COOLDOWN_DUR2 = 5
+local COOLDOWN2 = false
+
+local lastTick3 = tick()
+local COOLDOWN_DUR3 = 1
+local COOLDOWN3 = false
+
+players.PlayerAdded:Connect(function(player)
+	
+	
+end)
+
+
+u.InputBegan:Connect(function(input, gameProcessedEvent)
+	if input.KeyCode == Enum.KeyCode.One and COOLDOWN == false and not gameProcessedEvent and not workspace:FindFirstChild(players.LocalPlayer.Name):FindFirstChild("Freeze") then
+		print("Ability #1 fired")
+		local player = players.LocalPlayer
+		storage.GMAN.FireAbility:FireServer("fired1")
+		COOLDOWN=true
+		task.wait(COOLDOWN_DUR)
+		COOLDOWN=false
+		lastTick = tick()
+		
+	end
+	
+	if input.KeyCode == Enum.KeyCode.Two and COOLDOWN2 == false and not gameProcessedEvent and not workspace:FindFirstChild(players.LocalPlayer.Name):FindFirstChild("Freeze") then
+
+		print("Ability #2 fired")
+		storage.GMAN.GetLocation:FireServer(locations[index])
+		storage.GMAN.FireAbility:FireServer("fired2")
+		--adjusttie:Play()
+		COOLDOWN2=true
+		task.wait(COOLDOWN_DUR2)
+		COOLDOWN2=false
+		lastTick2 = tick()
+	end
+	
+	if input.KeyCode == Enum.KeyCode.Three and COOLDOWN3 == false and not gameProcessedEvent and not workspace:FindFirstChild(players.LocalPlayer.Name):FindFirstChild("Freeze") then
+		print("Ability #3 fired")
+		local mouse = game.Players.LocalPlayer:GetMouse()
+		storage.GMAN.FireAbility:FireServer("fired3", mouse.Target.Parent)
+		COOLDOWN3=true
+		task.wait(COOLDOWN_DUR3)
+		COOLDOWN3=false
+		lastTick3 = tick()
+	end
+	
+	if input.KeyCode == Enum.KeyCode.Four and COOLDOWN3 == false and not gameProcessedEvent and not workspace:FindFirstChild(players.LocalPlayer.Name):FindFirstChild("Freeze") then
+		print("Ability #4 fired")
+		local mouse = game.Players.LocalPlayer:GetMouse()
+		storage.GMAN.FireAbility:FireServer("fired4", mouse.Target)
+		COOLDOWN3=true
+		task.wait(COOLDOWN_DUR3)
+		COOLDOWN3=false
+		lastTick3 = tick()
+	end
+	
+	
+	if input.KeyCode == Enum.KeyCode.E and not gameProcessedEvent then
+		local locationText = players.LocalPlayer.PlayerGui:FindFirstChild("TeleportGUI"):FindFirstChild("Location")
+		if locations[index+1] == nil then
+			index = 1
+			locationText.Text = locations[index]
+			
+		else
+			index += 1
+			locationText.Text = locations[index]
+		end
+	end
+	if input.KeyCode == Enum.KeyCode.Q and not gameProcessedEvent then
+		local locationText = players.LocalPlayer.PlayerGui:FindFirstChild("TeleportGUI"):FindFirstChild("Location")
+		if locations[index-1] == nil then
+			index = #locations
+			locationText.Text = locations[index]
+		else
+			index -= 1
+			locationText.Text = locations[index]
+		end
+	end
+end)
